@@ -13,8 +13,8 @@ RISK <- read_csv("risk_by_job.csv")
 RES_RISK <- join(RES_2017B, RISK, by='V21')
 
 #필요한 변수만 선택하여 RES 데이터프레임 구축
-#학력(V5, 0~7), 교육컨버전(1~3), 산업소분류, 직업소분류, 평균임금(V26), 경제활동구분(V42), 시도전국가중치, 대체확률) 
-RES <- select(RES_RISK, V5, V9, V20, V21, V22, V26, V42, V44, RISK)
+#성별, 나이, 학력(V5, 0~7), 교육컨버전(1~3), 산업소분류(v20), 직업소분류, 평균임금(V26), 경제활동구분(V42), 시도전국가중치, 대체확률) 
+RES <- select(RES_RISK, V3, V4, V5, V9, V20, V21, V22, V26, V42, V44, RISK)
 write.csv(RES, file="./result/RES.csv")
 
 remove(RES_RISK)
@@ -40,6 +40,14 @@ RES$RiskGroup=0
 RES$RiskGroup=cut(RES$RISK, breaks=c(0, 0.3, 0.7,1), labels=c(1,2,3), right = FALSE)
 
 
+# 나이별 그룹핑(RISK)
+RES$AgeGroup=0
+RES$AgeGroup=cut(RES$V4, breaks=c(0, 20, 30, 40, 50, 60, 70, 120), labels=c(1,2,3,4,5,6,7), right = FALSE)
+
+
+RES$Sex=RES$V3
+
+
 # 컴퓨터화 위험별 그룹핑(RISK) - 세분화
 #RES$RiskGroup2=0
 #RES$RiskGroup2=cut(RES$RISK, breaks=c(0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1), labels=c(1,2,3,4,5,6,7,8,9,10), right = FALSE)
@@ -54,9 +62,6 @@ resultJob <- RES %>%
   group_by(JobGroup, RiskGroup2) %>% 
   summarize(sum_Employment=sum(V44))
 write.csv(resultJob, file="./result/resultJob.csv")
-
-
-ggplot(resultJob, aes(RiskGroup2)) + geom_histogram()
 
 
 
@@ -77,7 +82,10 @@ RES$EduGroup = RES$V5
 RES$WageGroup=0
 RES$WageGroup=cut(RES$V26, breaks=c(0, 120, 176, 230, 320, 10000), labels=c(1,2,3,4,5), right = FALSE)
 
+RES$WageGroup=cut(RES$V26, breaks=c(0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 10000), labels=c(0,1,2,3,4,5,6,7,8,9,10), right = FALSE)
 
+(0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 10000)
+(0,1,2,3,4,5,6,7,8,9,10)
 
 
 
@@ -152,7 +160,7 @@ write.csv(resultRISK_Wage, file="./result/resultRISK_Wage.csv")
 
 #직업별로 취업자 수 정렬
 resultJob <- RES %>% 
-  group_by(JobGroup, RiskGroup) %>% 
+  group_by(IndustryGroup, JobGroup, RiskGroup) %>% 
   summarize(sum_Employment=sum(V44))
 write.csv(resultJob, file="./result/resultJob.csv")
 
@@ -167,17 +175,17 @@ write.csv(resultIndustry, file="./result/resultIndustry.csv")
 
 #학력별 취업자 수 정렬
 resultEdu <- RES %>% 
-  group_by(EduGroup, RiskGroup) %>% 
+  group_by(V21, EduGroup, RiskGroup) %>% 
   summarize(sum_Employment=sum(V44))
-write.csv(resultEdu, file="./result/resultEdu.csv")
+write.csv(resultEdu, file="./result/resultEduV21.csv")
 
 
 
 #임금별 취업자 수 정렬
 resultWage <- RES %>% 
-  group_by(WageGroup, RiskGroup) %>% 
+  group_by(WageGroup, EduGroup, IndustryGroup, JobGroup, RiskGroup, AgeGroup, Sex) %>% 
   summarize(sum_Employment=sum(V44))
-write.csv(resultWage, file="./result/resultWage.csv")
+write.csv(resultWage, file="./result/resultTotal.csv")
 
 
 
