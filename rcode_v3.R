@@ -187,5 +187,9 @@ resultWage <- RES %>%
   summarize(sum_Employment=sum(V44))
 write.csv(resultWage, file="./result/resultTotal.csv")
 
-
+#직업별로 취업자 수 정렬
+resultJobDetail <- RES %>% 
+  group_by(IndustryGroup, JobGroup, RiskGroup, V20, V21) %>% 
+  summarize(sum_Employment=sum(V44))
+write.csv(resultJobDetail, file="./result/resultJobDetail.csv")
 
