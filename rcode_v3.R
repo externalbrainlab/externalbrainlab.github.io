@@ -22,6 +22,7 @@ remove(RES_2017B)
 
 RES$V20_M = 0
 
+#======= 여기부터 그룹핑 ====#
 
 # 산업별 그룹핑(V20)
 RES$IndustryGroup=0
@@ -29,27 +30,82 @@ RES$IndustryGroup=cut(RES$V20,breaks=c(0,50,100,350,370,410,450,490,550,580,640,
                        labels=c(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21), right = FALSE)
 # table(res1$IndustryGroup)
 
-
 # 직업별 그룹핑(V21)
 RES$JobGroup=0
 RES$JobGroup=cut(RES$V21,breaks=c(100,200,300,400,500,600,700,800,900,1000),
                   labels=c(1,2,3,4,5,6,7,8,9), right = FALSE)
 
-# 컴퓨터화 위험별 그룹핑(RISK)
+# 대체위험별 그룹핑(RISK)
 RES$RiskGroup=0
 RES$RiskGroup=cut(RES$RISK, breaks=c(0, 0.3, 0.7,1), labels=c(1,2,3), right = FALSE)
 
+# 학력별 그룹핑(Edu)
+RES$EduGroup = RES$V5
 
-# 나이별 그룹핑(RISK)
+# 임금 수준별(분위별 계산)
+quantile(RES$V26, probs = c(0, 0.2, 0.4, 0.6, 0.8, 1), na.rm = TRUE)
+RES$WageGroup=0
+RES$WageGroup2=0
+#RES$WageGroup=cut(RES$V26, breaks=c(0, 120, 176, 230, 320, 10000), labels=c(1,2,3,4,5), right = FALSE)
+#RES$WageGroup=cut(RES$V26, breaks=c(0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 10000), labels=c(0,1,2,3,4,5,6,7,8,9,10), right = FALSE)
+RES$WageGroup=cut(RES$V26, breaks=c(0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 10000), labels=c(0,1,2,3,4,5,6,7,8,9,10), right = FALSE)
+RES$WageGroup2=cut(RES$V26, breaks=c(0, 120, 176, 230, 320, 10000), labels=c(1,2,3,4,5), right = FALSE)
+
+# 연령별 그룹핑(AGE)
 RES$AgeGroup=0
 RES$AgeGroup=cut(RES$V4, breaks=c(0, 20, 30, 40, 50, 60, 70, 120), labels=c(1,2,3,4,5,6,7), right = FALSE)
 
-
+# 성별 그룹핑(SEX)
 RES$Sex=RES$V3
+
+#끝======= 여기까지 그룹핑 ====#
+
+
+#==== 그룹별로 취업자 수 계산후 엑셀로 출력=====#
+resultJobDetail2 <- RES %>% 
+  group_by(IndustryGroup, JobGroup, RiskGroup, EduGroup, WageGroup, WageGroup2, AgeGroup, Sex, V20, V21) %>% 
+  summarize(sum_Employment=sum(V44))
+write.csv(resultJobDetail2, file="./result/resultJobDetail2.csv")
+
+#끝==== 그룹별로 취업자 수 계산후 엑셀로 출력=====#
+
+
+#시작 === 그래프 ====
+
+RES$RiskGroup2=0
+RES$RiskGroup2=cut(RES$RISK, breaks=c(0,0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95,1), labels=c(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20), right = FALSE)
+#RES$RiskGroup2=cut(RES$RISK, breaks=c(0,0.025,0.05,0.075,0.1,0.125,0.15,0.175,0.2,0.225,0.25,0.275,0.3,0.325,0.35,0.375,0.4,0.425,0.45,0.475,0.5,0.525,0.55,0.575,0.6,0.625,0.65,0.675,0.7,0.725,0.75,0.775,0.8,0.825,0.85,0.875,0.9,0.925,0.95,0.975,1), labels=c(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40), right = FALSE)
+
+j<-ggplot(RES, aes(RiskGroup2, V44, fill=JobGroup))
+j+geom_bar(stat="identity", position="stack")
+
+#끝 === 그래프 ====
+
+ 
+#===== 대체확률 계산 =======#
+# 직업별 확률 (가중평균)
+resultRISKw_Job <- RES %>% 
+  group_by(JobGroup) %>% 
+  summarize(mean_RISKw=weighted.mean(RISK, V44))
+write.csv(resultRISKw_Job, file="./result/resultRISKw_Job.csv")
+
+# 직업별 확률 (가중평균 TOTAL)
+resultRISKwa_Job <- RES %>% 
+  group_by(V42) %>% 
+  summarize(mean_RISKwa=weighted.mean(RISK, V44))
+write.csv(resultRISKwa_Job, file="./result/resultRISKwa_Job.csv")
+
+resultRISKa_Job <- RES %>% 
+  group_by(V42) %>% 
+  summarize(mean_RISKa=mean(RISK))
+
+#============================#
+
 
 
 # 컴퓨터화 위험별 그룹핑(RISK) - 세분화
 #RES$RiskGroup2=0
+#RES$RiskGroup2=cut(RES$RISK, breaks=c(0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1), labels=c(1,2,3,4,5,6,7,8,9,10), right = FALSE)
 #RES$RiskGroup2=cut(RES$RISK, breaks=c(0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1), labels=c(1,2,3,4,5,6,7,8,9,10), right = FALSE)
 
 #RES$RiskGroup2=0
@@ -72,20 +128,14 @@ resultJob_Frey <- RES %>%
 write.csv(resultJob_Frey, file="./result/resultJob_Frey.csv")
 
 
-# 학력별 그룹핑
-# res1[res1$V9 == 1]
-#RES$EduGroup = RES$V9
-RES$EduGroup = RES$V5
+#직업별로 취업자 수 정렬
+resultJobDetail <- RES %>% 
+  group_by(IndustryGroup, JobGroup, RiskGroup,EduGroup, V20, V21) %>% 
+  summarize(sum_Employment=sum(V44))
+write.csv(resultJobDetail, file="./result/resultJobDetail.csv")
 
-# 임금 수준별(분위별 계산)
-#quantile(RES$V26, probs = c(0, 0.2, 0.4, 0.6, 0.8, 1), na.rm = TRUE)
-RES$WageGroup=0
-RES$WageGroup=cut(RES$V26, breaks=c(0, 120, 176, 230, 320, 10000), labels=c(1,2,3,4,5), right = FALSE)
 
-RES$WageGroup=cut(RES$V26, breaks=c(0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 10000), labels=c(0,1,2,3,4,5,6,7,8,9,10), right = FALSE)
 
-(0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 10000)
-(0,1,2,3,4,5,6,7,8,9,10)
 
 
 
@@ -189,7 +239,7 @@ write.csv(resultWage, file="./result/resultTotal.csv")
 
 #직업별로 취업자 수 정렬
 resultJobDetail <- RES %>% 
-  group_by(IndustryGroup, JobGroup, RiskGroup, V20, V21) %>% 
+  group_by(IndustryGroup, JobGroup, RiskGroup,EduGroup, V20, V21) %>% 
   summarize(sum_Employment=sum(V44))
 write.csv(resultJobDetail, file="./result/resultJobDetail.csv")
 
